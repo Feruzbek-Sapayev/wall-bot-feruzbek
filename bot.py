@@ -3,21 +3,14 @@ from aiogram.types import *
 from aiogram.utils import executor
 import requests
 from bs4 import BeautifulSoup as BS
-from pymongo import MongoClient
 from os import getenv
 from dotenv import load_dotenv
-
+from db import User, Theme
 
 load_dotenv()
 TOKEN = getenv("BOT_TOKEN")
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot=bot)
-
-MONGO_DB_TOKEN = getenv("MONGO_DB_TOKEN")
-myclient = MongoClient(MONGO_DB_TOKEN)
-mydb = myclient["wallpapers-bot"]
-src = mydb["sources"]
-peoples = mydb["users"]
 
 # ---------------------------variables-----------------------
 
@@ -34,7 +27,7 @@ themes_link = []
 page = 0
 caption =''
 cap = ''
-
+src = Theme
 
 
 def add_them():
@@ -43,11 +36,10 @@ def add_them():
     themes = []
     themes_link = []
 
-    
-    royxat = src.find() 
+    royxat = src.select()
     for i in royxat:
-        themes.append(i['name'])
-        themes_link.append(i['link'])
+        themes.append(i.name)
+        themes_link.append(i.link)
     theme = ReplyKeyboardMarkup(resize_keyboard=True)
     theme_admin = ReplyKeyboardMarkup(resize_keyboard=True)
     theme_delete = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -78,35 +70,25 @@ def get_image(link):
     src = soup.find_all('img')
     imgs = []
     for i in src:
-        if i.attrs.get('data-src') != None:
+        if i.attrs.get('data-src') is not None:
             imgs.append(str(i.attrs.get('data-src')))
     return imgs
 
-def add_user(id):
-    users = []
-    listt = peoples.find()
-    for i in listt:
-        users.append(i["id"])
+def add_user(id, name):
+    users = User.select()
     if not(id in users):
-        data = {'id': id}
-        peoples.insert_one(data)
+        User.create(telegram_id=id, name=name)
     
 def check_user(id):
-    users = []
-    listt = peoples.find()
-    for i in listt:
-        users.append(i["id"])
-    if id in users:
+    exists = User.select().where(User.telegram_id == id).exists()
+    if exists:
         return True
     else:
         return False
     
 def len_users():
-    users = 0
-    lenn = peoples.find()
-    for i in lenn:
-        users+=1
-    return users
+    users = User.select()
+    return len(users)
 
 
 # ----------------------------main codes----------------------
@@ -132,7 +114,7 @@ async def start(message: types.Message):
 
         else:
             await bot.send_message(message.chat.id, f" 👋 Assalomu aleykum  *{user_name}*. *FON RASMLARI BOT* ga xush kelibsiz!. \nMarhamat, mavzulardan birini tanlang👇", parse_mode='Markdown', reply_markup=theme)
-        add_user(user_id)
+        add_user(user_id, user_name)
     
 #----------------------------------events----------------------------
 @dp.message_handler()
@@ -149,10 +131,9 @@ async def add_theme(message: types.Message):
         if ad and message.text != "Bekor qilish":
             theme_name, theme_url = message.text.split()
             if (theme_name != '') and ("https://www.wallpaperflare.com" in theme_url):
-                t = {"name": theme_name, "link": theme_url}
-                src.insert_one(t)
+                src.create(name=theme_name, link=theme_url)
                 ad= False
-                add_them(message.from_user.id)
+                add_them()
                 await message.answer('Mavzu muvaffaqiyatli qo`shildi!', reply_markup=theme_admin)
             else:
                 await message.answer("Ma`lumotlarni xato kiritdingiz, iltimos tekshirib qayta kiritng!")
@@ -161,16 +142,15 @@ async def add_theme(message: types.Message):
 
         if delete:
             n = message.text
-            t = {'name': n}
-            src.delete_one(t)
-            add_them(message.from_user.id)
+            src.delete().where(src.name==n)
+            add_them()
             await message.answer("Mavzu muvaffaqiyatli o`chirildi!", reply_markup=theme_admin)
 
         else:
 
             cap = f"<b>{message.text}</b>"
-            caption =cap + "\n\nEng zo'r fon rasmlari shu yerda👇\n@SFWallpapersBot"
-            
+            caption =cap + "\n\nEng zo'r fon rasmlari shu yerda👇\n@SFWallpapers_Bot"
+
             page = 5
             index = themes.index(message.text)
             images = get_image(themes_link[index])
@@ -180,7 +160,7 @@ async def add_theme(message: types.Message):
                 i+=1
 
     if (message.text == "Yana ➡️"):
-        
+
         i = page
         page += 5
         while len(images)>i and page>i:
@@ -196,7 +176,7 @@ async def add_theme(message: types.Message):
 
     if message.text == '📊 Statistika':
         t = len_users()
-        await message.answer(f"*👨🏻‍💻 Obunachilar soni - {t} ta.*\n\n📊 @SFWallpapersBot statistikasi", parse_mode="Markdown")
+        await message.answer(f"*👨🏻‍💻 Obunachilar soni - {t} ta.*\n\n📊 @SFWallpapers\\_Bot statistikasi", parse_mode="Markdown")
     
     if message.text == "Bekor qilish":
         ad = False
