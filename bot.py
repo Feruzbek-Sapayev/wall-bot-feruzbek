@@ -142,8 +142,9 @@ async def add_theme(message: types.Message):
 
         if delete:
             n = message.text
-            src.delete().where(src.name==n)
+            src.delete().where(src.name == n).execute()
             add_them()
+            delete = False
             await message.answer("Mavzu muvaffaqiyatli o`chirildi!", reply_markup=theme_admin)
 
         else:
