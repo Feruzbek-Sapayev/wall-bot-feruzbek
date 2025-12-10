@@ -4,14 +4,17 @@ from aiogram.utils import executor
 import requests
 from bs4 import BeautifulSoup as BS
 from pymongo import MongoClient
+from os import getenv
+from dotenv import load_dotenv
 
 
-
-TOKEN = "5803790907:AAFjOndmwlwpuXnNeaHqf_6LUJUMUsdGhoE"
+load_dotenv()
+TOKEN = getenv("BOT_TOKEN")
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot=bot)
 
-myclient = MongoClient("mongodb+srv://admin:user12345@botdb.vssvoe7.mongodb.net/?retryWrites=true&w=majority")
+MONGO_DB_TOKEN = getenv("MONGO_DB_TOKEN")
+myclient = MongoClient(MONGO_DB_TOKEN)
 mydb = myclient["wallpapers-bot"]
 src = mydb["sources"]
 peoples = mydb["users"]
@@ -116,7 +119,7 @@ async def start(message: types.Message):
 
     add_them()
     if check_user(user_id):
-        if message.from_user.username == "Feruzbek_Sapayev":
+        if message.from_user.username == "FeruzbekBro":
             await message.answer("Salom Feruzbek!", reply_markup=theme_admin)
         
         else:
@@ -124,7 +127,7 @@ async def start(message: types.Message):
             
 
     else:
-        if message.from_user.username == "Feruzbek_Sapayev":
+        if message.from_user.username == "FeruzbekBro":
             await message.answer("Salom Feruzbek!", reply_markup=theme_admin)
 
         else:
@@ -138,7 +141,7 @@ async def add_theme(message: types.Message):
 
 
 
-    if message.text == "➕ Mavzu qo`shish" and message.from_user.username == "Feruzbek_Sapayev":
+    if message.text == "➕ Mavzu qo`shish" and message.from_user.username == "FeruzbekBro":
         ad = True
         await message.answer("Iltimos, mavzu nomini va linkini bir qatorda kiritng masalan: theme link", reply_markup=cancel)
 
@@ -185,7 +188,7 @@ async def add_theme(message: types.Message):
             i+=1
 
     if message.text == "Asosiy menyu⬆️":
-        if message.from_user.username == "Feruzbek_Sapayev":
+        if message.from_user.username == "FeruzbekBro":
             await message.answer(message.text, reply_markup=theme_admin)
         else:
             add_them()
@@ -199,7 +202,7 @@ async def add_theme(message: types.Message):
         ad = False
         delete =False
         await message.answer("Bekor qilindi!", reply_markup=theme_admin)
-    if message.text == "✖️ Mavzuni o`chirish" and message.from_user.username == "Feruzbek_Sapayev":
+    if message.text == "✖️ Mavzuni o`chirish" and message.from_user.username == "FeruzbekBro":
         theme_del = theme_delete
         theme_del.add("Bekor qilish")
         await message.answer("Mavzuni tanlang:", reply_markup=theme_del)
@@ -214,3 +217,4 @@ if __name__=='__main__':
     executor.start_polling(dp, skip_updates=True)
 
     
+
